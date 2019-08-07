@@ -1,64 +1,62 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class Shooter : MonoBehaviour
 {
-    // Start is called before the first frame update
-    public float speed;
-    public float stoppingDistance;
-    public float retreatDistance;
-    public float SightDistance = 10;
-    public bool CanMove = true;
-    public bool CanShoot = true;
-
-    private float timeBtwShots;
-    public float startTimeBtwShots;
-
-    private Transform player;
+    public float moveSpeed;
+    public float sightDistance;
+    public float shootingDistance;
+    public float minimumDistance;
+    public float groundLevel;
+    public bool canShoot = true;
+    public bool canMove = true;
+    public bool canFly = true;
+    public int fireRate = 600;
     public GameObject projectile;
+
+    private float shootTimer;
+    private float delayBetweenShots;
+    private Transform player;
 
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player").transform;
-        timeBtwShots = startTimeBtwShots;
+        delayBetweenShots = 60f / fireRate;
+        shootTimer = 0;
     }
 
     // Update is called once per frame
     void Update()
     {
-        float distance = Vector2.Distance(transform.position, player.position);
+        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
 
-        if (distance > SightDistance)
-            return;
-
-        if (CanMove)
+        if (canMove)
         {
-            if (distance > stoppingDistance)
+            Vector3 targetPosition = player.position;
+            if (!canFly)
+                targetPosition.y = groundLevel;
+
+            if (distanceToPlayer < minimumDistance)
             {
-                transform.position = Vector2.MoveTowards(transform.position, player.position, speed * Time.deltaTime);
+                transform.position = Vector2.MoveTowards(transform.position, targetPosition, -moveSpeed * Time.deltaTime);
             }
-            else if (distance < stoppingDistance && distance > retreatDistance)
+            else if (distanceToPlayer < sightDistance)
             {
-                transform.position = this.transform.position;
-            }
-            else if (distance > retreatDistance)
-            {
-                transform.position = Vector2.MoveTowards(transform.position, player.position, -speed * Time.deltaTime);
+                transform.position = Vector2.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
             }
         }
 
-        if (CanShoot)
+        if (canShoot && distanceToPlayer < shootingDistance)
         {
-            if (timeBtwShots <= 0)
+            if (shootTimer <= 0)
             {
                 Instantiate(projectile, transform.position, Quaternion.identity);
-                timeBtwShots = startTimeBtwShots;
+                shootTimer = delayBetweenShots;
             }
             else
             {
-                timeBtwShots -= Time.deltaTime;
+                shootTimer -= Time.deltaTime;
             }
         }
     }
